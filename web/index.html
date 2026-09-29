@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>MAX Jeune — trouver un TGV à 0 €</title>
+  <meta name="description" content="Recherche de trajets MAX Jeune : directs, montée en cours, correspondances, compléments TER.">
+  <meta name="theme-color" content="#1F3C88" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0E1424" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MAX Jeune">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <img src="icons/icon-192.png" alt="" width="32" height="32">
+        <div>
+          <h1>MAX Jeune</h1>
+          <p id="freshness" class="freshness">Chargement des données…</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <form id="search" class="panel search" autocomplete="off" novalidate>
+      <div class="od">
+        <label class="field">
+          <span class="lbl">Départ</span>
+          <input id="dep" name="dep" type="text" placeholder="Ville, gare ou hub" enterkeyhint="next"
+                 autocapitalize="characters" spellcheck="false" required>
+          <ul class="suggest" id="dep-suggest" role="listbox" hidden></ul>
+        </label>
+        <button type="button" id="swap" class="swap" aria-label="Inverser départ et arrivée">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v13m0 0-3-3m3 3 3-3M17 20V7m0 0-3 3m3-3 3 3"/></svg>
+        </button>
+        <label class="field">
+          <span class="lbl">Arrivée</span>
+          <input id="arr" name="arr" type="text" placeholder="Ville, gare ou hub" enterkeyhint="search"
+                 autocapitalize="characters" spellcheck="false" required>
+          <ul class="suggest" id="arr-suggest" role="listbox" hidden></ul>
+        </label>
+      </div>
+
+      <div class="when">
+        <label class="field">
+          <span class="lbl">Date</span>
+          <input id="date" type="date" required>
+        </label>
+        <label class="field">
+          <span class="lbl">Partir après</span>
+          <input id="hmin" type="time" value="00:00">
+        </label>
+        <label class="field">
+          <span class="lbl"><input id="amax-on" type="checkbox"> Arriver avant</span>
+          <input id="amax" type="time" value="23:59" disabled>
+        </label>
+      </div>
+
+      <details class="options">
+        <summary>Options de recherche</summary>
+        <div class="switches">
+          <label class="switch"><input type="checkbox" id="opt-ext"><span></span>
+            <b>Hubs étendus</b><small>Lyon étendu, Marseille + Aix TGV</small></label>
+          <label class="switch"><input type="checkbox" id="opt-boarding" checked><span></span>
+            <b>Montée / descente en cours</b><small>Billet plus long sur le même train</small></label>
+          <label class="switch"><input type="checkbox" id="opt-two" checked><span></span>
+            <b>2 segments MAX</b><small>Deux billets MAX avec correspondance</small></label>
+          <label class="switch"><input type="checkbox" id="opt-ter" checked><span></span>
+            <b>MAX + TER</b><small>Si aucune solution 100 % MAX</small></label>
+          <label class="switch"><input type="checkbox" id="opt-force-ter"><span></span>
+            <b>Toujours proposer MAX + TER</b><small>Même s'il existe du 100 % MAX</small></label>
+        </div>
+      </details>
+
+      <button type="submit" class="cta" id="go">Rechercher</button>
+    </form>
+
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-results" aria-selected="true">Résultats</button>
+      <button role="tab" id="tab-scan" aria-selected="false">Calendrier 30 jours</button>
+    </nav>
+
+    <section id="view-results" class="view">
+      <div id="summary" class="summary" hidden></div>
+      <div id="toolbar" class="toolbar" hidden>
+        <div class="chips" id="chips"></div>
+        <label class="sort">Trier
+          <select id="sort">
+            <option value="dep">par départ</option>
+            <option value="arr">par arrivée</option>
+            <option value="dur">par durée</option>
+          </select>
+        </label>
+      </div>
+      <div id="results" class="results">
+        <div class="empty">
+          <p class="big">Où voulez-vous aller ?</p>
+          <p>Saisissez un départ et une arrivée. Les hubs (ex. <b>PARIS (HUB)</b>) regroupent toutes les gares d'une ville.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-scan" class="view" hidden>
+      <div class="panel scan-intro">
+        <p>Même recherche (gares, horaires, options) sur 30 jours à partir de la date choisie. Touchez un jour pour voir le détail.</p>
+        <button type="button" class="cta" id="scan-go">Lancer le balayage</button>
+        <div class="progress" id="scan-progress" hidden><div></div></div>
+      </div>
+      <div id="scan-list" class="scan-list"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <button type="button" id="report" class="link">Signaler un problème</button>
+    <p>Données ouvertes SNCF Voyageurs : disponibilités TGVMax et horaires théoriques GTFS
+      (licence <a href="https://opendatacommons.org/licenses/odbl/" rel="noopener">ODbL</a>).
+      Les places MAX évoluent en continu : vérifiez toujours sur SNCF Connect avant de réserver.</p>
+    <p id="version" class="muted"></p>
+  </footer>
+
+  <div id="toast" class="toast" hidden></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

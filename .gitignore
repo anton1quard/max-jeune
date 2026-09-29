@@ -1,0 +1,14 @@
+# Données volumineuses : téléchargées à la volée, jamais publiées dans le dépôt
+*.csv
+*.zip
+*.xlsx
+*.tmp
+
+# Fichiers générés
+_site/
+web/data/
+__pycache__/
+.pytest_cache/
+
+# Ancienne version
+archive/
