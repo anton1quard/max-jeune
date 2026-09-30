@@ -18,6 +18,7 @@ Usage :
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from collections import OrderedDict
@@ -36,10 +37,15 @@ def _minutes(dt: datetime, day: datetime) -> int:
     return int((dt - day).total_seconds() // 60)
 
 
-def _dump(path: Path, obj) -> int:
+_CONTENT_HASH = hashlib.sha256()
+
+
+def _dump(path: Path, obj, hashed: bool = True) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
     data = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
     path.write_text(data, encoding="utf-8")
+    if hashed:
+        _CONTENT_HASH.update(path.name.encode() + data.encode("utf-8"))
     return len(data)
 
 
@@ -119,11 +125,14 @@ def build(out: Path, csv_path: Path, gtfs_path: Path) -> dict:
         "tgvmax_rows": n_rows,
         "tgvmax_oui": n_oui,
         "gtfs_version": net.feed_version,
+        # Empreinte des fichiers de données : sert à ne republier le site que
+        # si les données SNCF ont réellement changé (voir check_changed.py).
+        "content_hash": _CONTENT_HASH.hexdigest(),
         "dates": dates,
         "stations": sorted(all_stations | net.stations),
         "config": engine_config(),
     }
-    sizes["meta"] = _dump(out / "meta.json", meta)
+    sizes["meta"] = _dump(out / "meta.json", meta, hashed=False)
     return {"dates": len(dates), "rows": n_rows, "oui": n_oui, "ter_trips": len(net.trips),
             "sizes_mb": {k: round(v / 1e6, 2) for k, v in sizes.items()}}
 

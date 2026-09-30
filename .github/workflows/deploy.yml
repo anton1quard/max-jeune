@@ -1,6 +1,10 @@
 # Met à jour les données SNCF et publie le site sur GitHub Pages.
-# - 3 fois par jour (horaires UTC ci-dessous), à chaque modification du code,
-#   ou à la main (onglet Actions > "Mise à jour et déploiement" > Run workflow).
+# - Vérification toutes les heures de 5 h à 23 h (heure de Paris en été ; 4 h
+#   à 22 h en hiver) : GitHub retarde ou saute parfois des lancements
+#   programmés, des vérifications fréquentes compensent. Le site n'est
+#   republié que si les données SNCF ont changé.
+# - Aussi à chaque modification du code, ou à la main (onglet Actions >
+#   "Mise à jour et déploiement" > Run workflow).
 # - Si une étape échoue (données SNCF cassées, tests en échec), rien n'est
 #   publié : le site reste sur la dernière version valide et GitHub t'envoie
 #   un email.
@@ -10,7 +14,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "15 4,10,16 * * *"
+    - cron: "7 3-21 * * *"
   workflow_dispatch:
 
 permissions:
@@ -26,6 +30,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      deploy: ${{ steps.changed.outputs.deploy }}
     steps:
       - uses: actions/checkout@v7
 
@@ -45,23 +51,34 @@ jobs:
       - name: Télécharger les données SNCF et préparer les fichiers du site
         run: python pipeline/build_data.py --out _site/data --download --csv /tmp/tgvmax.csv --gtfs /tmp/gtfs.zip
 
+      - name: Les données ont-elles changé depuis la dernière publication ?
+        id: changed
+        run: >
+          python pipeline/check_changed.py _site/data/meta.json
+          "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/meta.json"
+          >> "$GITHUB_OUTPUT"
+
       - name: Vérifier que le moteur web donne les mêmes résultats que le moteur Python
+        if: steps.changed.outputs.deploy == 'true'
         run: |
           python web/tests/make_golden.py --out /tmp/golden.json --csv /tmp/tgvmax.csv --gtfs /tmp/gtfs.zip
           node web/tests/golden.test.mjs _site/data /tmp/golden.json
 
       - name: Assembler le site
+        if: steps.changed.outputs.deploy == 'true'
         run: |
           cp -r web/index.html web/style.css web/app.js web/engine.js web/sw.js web/manifest.webmanifest web/icons _site/
           sed -i "s/__BUILD__/${GITHUB_SHA::7}/" _site/app.js _site/sw.js
           touch _site/.nojekyll
 
       - uses: actions/upload-pages-artifact@v5
+        if: steps.changed.outputs.deploy == 'true'
         with:
           path: _site
 
   deploy:
     needs: build
+    if: needs.build.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

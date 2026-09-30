@@ -75,7 +75,13 @@ L'icône s'ouvre en plein écran comme une app. Elle fonctionne aussi hors ligne
 
 ## Fonctionnement au quotidien
 
-- **Données** : elles sont mises à jour automatiquement 3 fois par jour (≈ 6 h 15, 12 h 15 et 18 h 15, heure de Paris en été). Rien à faire. La date de mise à jour s'affiche en haut du site.
+- **Données** : elles sont vérifiées toutes les heures de 5 h à 23 h (heure de Paris en été, de 4 h à 22 h en hiver).
+  - Le site n'est republié que si les données SNCF ont réellement changé : l'heure affichée en haut du site est celle de la dernière vraie mise à jour.
+  - GitHub retarde ou saute parfois des lancements programmés : les vérifications fréquentes compensent.
+  - Besoin de données fraîches tout de suite : onglet **Actions**, puis **Mise à jour et déploiement**, puis **Run workflow**.
+- **Inactivité** : GitHub suspend les tâches programmées d'un dépôt public après **60 jours sans modification du code**.
+  - Il prévient par email avant.
+  - Pour relancer : onglet **Actions**, puis **Mise à jour et déploiement**, puis **Enable workflow** (un clic).
 - **Si quelque chose casse** (par exemple la SNCF change son fichier) :
   - la publication est annulée et le site reste sur la dernière version valide ;
   - GitHub t'envoie un email.
