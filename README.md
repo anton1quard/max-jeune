@@ -71,17 +71,45 @@ Télécharge-le sur <https://desktop.github.com>, puis connecte-toi avec ton com
 
 L'icône s'ouvre en plein écran comme une app. Elle fonctionne aussi hors ligne, avec les dernières données consultées.
 
+### 7. Déclencheur cron-job.org (mises à jour à l'heure)
+
+**a. Créer un jeton GitHub limité à ce dépôt**
+
+1. Sur github.com : photo de profil → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens** → **Generate new token**.
+2. **Token name** : `cron-job max-jeune`. **Expiration** : la plus longue proposée.
+3. **Repository access** : **Only select repositories** → `max-jeune`.
+4. **Permissions** → **Repository permissions** → **Actions** : **Read and write**. Ne touche à rien d'autre.
+5. **Generate token**, puis copie le jeton (il ne s'affiche qu'une fois). Ne le colle nulle part ailleurs que dans cron-job.org.
+
+**b. Créer la tâche sur cron-job.org**
+
+1. Crée un compte gratuit sur https://cron-job.org, puis **Create cronjob**.
+2. Onglet **Common** :
+   - **URL** : `https://api.github.com/repos/anton1quard/max-jeune/actions/workflows/deploy.yml/dispatches`
+   - **Execution schedule** → **Custom** : fuseau **Europe/Paris** ; heures **6, 7, 8, 12, 18** ; minute **50** (soit 6 h 50, 7 h 50, 8 h 50, 12 h 50 et 18 h 50).
+3. Onglet **Advanced** :
+   - **Request method** : `POST`
+   - **Headers** (3 lignes) :
+     - `Authorization` : `Bearer ` suivi du jeton
+     - `Accept` : `application/vnd.github+json`
+     - `X-GitHub-Api-Version` : `2022-11-28`
+   - **Request body** : `{"ref":"main"}`
+   - **Notifications** : coche l'email en cas d'échec.
+4. Enregistre, puis clique **Test run**. Réponse attendue : **204**. Dans l'onglet Actions de GitHub, un lancement « Mise à jour et déploiement » démarre.
+
 ---
 
 ## Fonctionnement au quotidien
 
-- **Données** : elles sont vérifiées toutes les heures de 5 h à 23 h (heure de Paris en été, de 4 h à 22 h en hiver).
-  - Le site n'est republié que si les données SNCF ont réellement changé : l'heure affichée en haut du site est celle de la dernière vraie mise à jour.
-  - GitHub retarde ou saute parfois des lancements programmés : les vérifications fréquentes compensent.
-  - Besoin de données fraîches tout de suite : onglet **Actions**, puis **Mise à jour et déploiement**, puis **Run workflow**.
-- **Inactivité** : GitHub suspend les tâches programmées d'un dépôt public après **60 jours sans modification du code**.
-  - Il prévient par email avant.
-  - Pour relancer : onglet **Actions**, puis **Mise à jour et déploiement**, puis **Enable workflow** (un clic).
+- **Données** : la SNCF publie son fichier vers 6 h 30 chaque matin.
+  - **cron-job.org** (gratuit) lance la mise à jour à heures fixes : voir « Déclencheur cron-job.org » ci-dessous. Les lancements programmés de GitHub se sont révélés trop irréguliers : 3 à 4 par jour au lieu de 19, jamais avant 11 h.
+  - **Secours** : le workflow « Secours mise à jour » relance aussi la mise à jour vers 7 h 40, 10 h 40 et 16 h 40.
+  - Le site n'est republié que si les données SNCF ont réellement changé : l'heure affichée en haut du site est celle de la dernière vraie mise à jour. Après 8 h, si ce sont encore les données de la veille, le site affiche « ⚠ pas encore les places du jour ».
+  - Besoin de données fraîches tout de suite : onglet **Actions**, puis **Mise à jour et déploiement**, puis **Run workflow**. Coche « Republier même si… » pour forcer une publication.
+- **Inactivité** : GitHub désactive les workflows programmés d'un dépôt public après **60 jours sans modification du code**.
+  - Seul le secours est concerné : la mise à jour principale reste lancée par cron-job.org.
+  - Pour réactiver le secours : onglet **Actions**, puis **Secours mise à jour**, puis **Enable workflow** (un clic).
+- **Jeton GitHub de cron-job.org** : il expire à la date choisie à sa création. GitHub prévient par email avant. Il suffit d'en régénérer un (même page, **Regenerate token**) et de le recoller dans cron-job.org.
 - **Si quelque chose casse** (par exemple la SNCF change son fichier) :
   - la publication est annulée et le site reste sur la dernière version valide ;
   - GitHub t'envoie un email.

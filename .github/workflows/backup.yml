@@ -1,0 +1,27 @@
+# Secours si cron-job.org ne répond pas : relance "Mise à jour et
+# déploiement" quelques fois par jour. Les lancements programmés de GitHub
+# sont irréguliers (retards de plusieurs heures, lancements sautés), d'où ce
+# simple rôle de filet de sécurité.
+# Si GitHub désactive ce workflow après 60 jours sans commit, seul ce secours
+# s'arrête : le workflow principal reste lançable par cron-job.org.
+name: Secours mise à jour
+
+on:
+  schedule:
+    # Heures UTC : 7 h 40, 10 h 40 et 16 h 40 à Paris en été (une heure de
+    # moins en hiver). La SNCF publie vers 6 h 30.
+    - cron: "40 5,8,14 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  relancer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Lancer "Mise à jour et déploiement"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --repo "${{ github.repository }}" --ref main

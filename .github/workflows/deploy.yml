@@ -1,10 +1,13 @@
 # Met à jour les données SNCF et publie le site sur GitHub Pages.
-# - Vérification toutes les heures de 5 h à 23 h (heure de Paris en été ; 4 h
-#   à 22 h en hiver) : GitHub retarde ou saute parfois des lancements
-#   programmés, des vérifications fréquentes compensent. Le site n'est
-#   republié que si les données SNCF ont changé.
+# - Lancé de l'extérieur par cron-job.org (appel API workflow_dispatch), car
+#   les lancements programmés de GitHub sont trop irréguliers (souvent rien
+#   avant midi). Secours : backup.yml. Pas de "schedule" ici exprès : GitHub
+#   désactive après 60 jours sans commit les workflows programmés, et ce
+#   workflow-ci doit toujours rester actif.
 # - Aussi à chaque modification du code, ou à la main (onglet Actions >
 #   "Mise à jour et déploiement" > Run workflow).
+# - Hors modification du code, le site n'est republié que si les données SNCF
+#   ont changé (ou si "forcer" est coché).
 # - Si une étape échoue (données SNCF cassées, tests en échec), rien n'est
 #   publié : le site reste sur la dernière version valide et GitHub t'envoie
 #   un email.
@@ -13,9 +16,12 @@ name: Mise à jour et déploiement
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: "7 3-21 * * *"
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Republier même si les données SNCF n'ont pas changé"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -53,6 +59,8 @@ jobs:
 
       - name: Les données ont-elles changé depuis la dernière publication ?
         id: changed
+        env:
+          FORCE: ${{ inputs.force }}
         run: >
           python pipeline/check_changed.py _site/data/meta.json
           "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/meta.json"

@@ -22,8 +22,15 @@ dépôt public anton1quard/max-jeune). Détails d'usage : voir README.md.
 - `web/tests/` — test de fidélité : `make_golden.py` (Python) produit ~700
   recherches de référence sur les données réelles, `golden.test.mjs` vérifie
   que le moteur JS donne exactement les mêmes résultats.
-- `.github/workflows/deploy.yml` — vérification horaire (cron "7 3-21 * * *"),
-  tests, test de fidélité, publication Pages si les données ont changé.
+- `.github/workflows/deploy.yml` — tests, test de fidélité, publication Pages
+  si les données ont changé (ou push / input `force`). PAS de `schedule` :
+  lancé par cron-job.org (API workflow_dispatch, jeton fine-grained de
+  l'utilisateur ; 6h50, 7h50, 8h50, 12h50, 18h50 Paris). Le cron GitHub
+  s'est révélé inutilisable (3-4 lancements/jour sur 19, jamais avant 11 h).
+- `.github/workflows/backup.yml` — secours programmé (3/jour) qui relance
+  deploy.yml via `gh workflow run` ; séparé pour que la désactivation
+  « 60 jours sans commit » ne touche pas deploy.yml.
+- La SNCF publie le CSV TGVMax vers 6 h 25 (heure de Paris).
 
 ## Fonctionnalités du moteur (spécification validée avec l'utilisateur)
 
@@ -72,6 +79,5 @@ dépôt public anton1quard/max-jeune). Détails d'usage : voir README.md.
 
 - Hubs supplémentaires (Montpellier, Bordeaux, Lille…) si besoin.
 - MAX + TER avec changement TER-TER (actuellement un seul TER direct).
-- Si GitHub continue de sauter des lancements programmés : déclencheur
-  externe (ex. cron-job.org appelant l'API workflow_dispatch avec un jeton).
-- GitHub suspend les tâches programmées après 60 jours sans commit.
+- GitHub suspend les workflows programmés après 60 jours sans commit (ne
+  concerne que backup.yml).

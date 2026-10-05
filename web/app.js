@@ -393,6 +393,12 @@ async function init() {
   const gen = new Date(m.generated_at);
   $("freshness").textContent = `Places MAX mises à jour le ${gen.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}`
     + ` à ${gen.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
+  // La SNCF publie vers 6 h 30 : après 8 h, des données de la veille sont en retard.
+  const parisDay = (d) => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
+  const parisHour = Number(new Date().toLocaleString("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", hour12: false }));
+  if (parisDay(gen) < parisDay(new Date()) && parisHour >= 8) {
+    $("freshness").textContent += " · ⚠ pas encore les places du jour";
+  }
   const dateInput = $("date");
   dateInput.min = m.dates[0];
   dateInput.max = m.dates.at(-1);
