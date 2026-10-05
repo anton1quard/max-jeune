@@ -78,7 +78,7 @@ L'icône s'ouvre en plein écran comme une app. Elle fonctionne aussi hors ligne
 1. Sur github.com : photo de profil → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens** → **Generate new token**.
 2. **Token name** : `cron-job max-jeune`. **Expiration** : la plus longue proposée.
 3. **Repository access** : **Only select repositories** → `max-jeune`.
-4. **Permissions** → **Repository permissions** → **Actions** : **Read and write**. Ne touche à rien d'autre.
+4. **Permissions** → **+ Add permissions** → cherche et sélectionne **Actions** (pas « Actions variables ») → **Access : Read and write**. À la fin, il doit y avoir seulement 2 lignes : **Metadata** (Read-only, obligatoire) et **Actions** (Read and write).
 5. **Generate token**, puis copie le jeton (il ne s'affiche qu'une fois). Ne le colle nulle part ailleurs que dans cron-job.org.
 
 **b. Créer la tâche sur cron-job.org**
