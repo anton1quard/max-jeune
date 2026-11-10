@@ -373,7 +373,9 @@ class Dataset:
 
     @property
     def dates(self) -> List[str]:
-        return sorted(self.tickets_by_date)
+        # Tous les jours du CSV, y compris ceux sans aucune place OUI (dates
+        # tout juste ouvertes, souvent les derniers jours) : comme le site.
+        return sorted({date_str for date_str, _ in self.runs})
 
 
 def _find_column(headers: Sequence[str], keywords: Sequence[str],

@@ -13,6 +13,7 @@ import max_jeune_engine as E  # noqa: E402
 
 D = "2026-10-01"
 D2 = "2026-10-02"
+D3 = "2026-10-03"
 HEADER = ("DATE;TRAIN_NO;ENTITY;Axe;Origine IATA;Destination IATA;Origine;Destination;"
           "Heure_depart;Heure_arrivee;Disponibilité de places MAX JEUNE et MAX SENIOR")
 
@@ -78,6 +79,8 @@ ROWS = [
     # Jour suivant pour le balayage
     row(D2, "300", PGL, MRS, "08:00", "11:20", True),
     row(D2, "301", PGL, MRS, "18:00", "21:20", True),
+    # Jour tout juste ouvert, sans aucune place OUI (cas réel en fin de CSV)
+    row(D3, "300", PGL, MRS, "08:00", "11:20", False),
 ]
 
 
@@ -256,8 +259,10 @@ def test_scan(ds):
     dl = E.resolve_location("PARIS", ds.stations).candidates
     al = E.resolve_location("MARSEILLE", ds.stations).candidates
     days = E.scan_days(ds, E.Query(D, dl, al), n_days=30)
-    assert [(d.date_str, d.n_direct) for d in days] == [(D, 4), (D2, 2)]
+    # Le jour sans place OUI figure quand même (0), comme sur le site.
+    assert [(d.date_str, d.n_direct) for d in days] == [(D, 4), (D2, 2), (D3, 0)]
     assert days[1].last_dep == "18:00"
+    assert days[2].first_dep == "—"
 
 
 # --- Partie D : MAX + TER ------------------------------------------------------
